@@ -1,0 +1,934 @@
+/*Kreiranje Databaze i njenih tabela*/
+go
+Create database Maturant
+go
+/**/
+go
+use Maturant
+go
+/**/
+go
+Create Table Korisnik
+( korisnik_id int Primary Key Identity(1,1),
+  korisnik_email nvarchar(50) Not Null,
+  korisnik_loz nvarchar(100) Not Null
+)
+go
+/**/
+go
+Create Table S_Godina
+( sgodina_id int Primary Key Identity(1,1),
+  skolska_godina nvarchar(5) Not Null
+)
+go
+/**/
+go
+Create Table Predmet
+(predmet_id int Primary Key Identity(1,1),
+naziv_predmeta nvarchar(100) Not Null
+)
+go
+/**/
+go
+Create Table Profesor
+( profesor_id int Primary Key Identity(1,1),
+Ime_profesora nvarchar(100) Not Null,
+Prezime_profesora nvarchar(100)Not Null,
+predmet_1 int Not Null,
+predmet_2 int,
+predmet_3 int
+)
+go
+/**/
+go
+Create Table Razred (
+razred_id int Primary Key Identity(1,1),
+naziv_razreda nvarchar(5) Not Null,
+sgodina_id int Not Null,
+profesor_id int Not Null
+)
+go
+/**/
+go
+Create Table Ucenik
+(
+ucenik_id int Primary Key Identity(1,1),
+ime_ucenik nvarchar(100),
+prez_ucenik nvarchar(100),
+razred_id int,
+Ulica nvarchar(200),
+Grad nvarchar(200)
+)
+go
+
+/**/
+go
+Create table MaturskiRad 
+(
+maturrad_id int Primary Key Identity(1,1),
+naziv_rada nvarchar(300) Not Null,
+ucenik_id int,
+profesor_id int,
+fajl_lokacija nvarchar(300)
+)
+go
+/**/
+go
+Create Table Komentar (
+komentar_id int Primary Key Identity(1,1),
+maturrad_id int,
+komentar nvarchar(240),
+Ocena int DEFAULT (0),
+Ime_Korisnika nvarchar(100),
+dozvolaprikaza nvarchar(2)
+)
+go
+/**/
+/**********************************************************************************************************/
+/*RELACIONI INTEGRITER*/
+/**/
+ALTER TABLE Razred
+ADD CONSTRAINT
+FK_sgodina_id FOREIGN KEY
+(sgodina_id) REFERENCES S_Godina(sgodina_id)
+/**/
+ALTER TABLE Razred
+ADD CONSTRAINT
+FK_profesor_id FOREIGN KEY
+(profesor_id) REFERENCES Profesor(profesor_id)
+/**/
+ALTER TABLE Ucenik
+ADD CONSTRAINT
+FK_razred_ucenik_id FOREIGN KEY
+(razred_id) REFERENCES Razred(razred_id)
+
+Alter table Profesor
+ADD CONSTRAINT
+FK_predmet_1 FOREIGN KEY
+(predmet_1) REFERENCES Predmet(predmet_id)
+/**/
+Alter table MaturskiRad
+ADD CONSTRAINT
+FK_ucenik_id FOREIGN KEY
+(ucenik_id) REFERENCES Ucenik(ucenik_id)
+/**/
+Alter table MaturskiRad
+ADD CONSTRAINT
+FK_profesor_id_MR FOREIGN KEY
+(profesor_id) REFERENCES Profesor(profesor_id)
+/**/
+Alter table Komentar
+ADD CONSTRAINT
+FK_maturrad_id FOREIGN KEY
+(maturrad_id) REFERENCES MaturskiRad(maturrad_id)
+/**/
+/**********************************************************************************************************/
+/*Store Procedure TABELA Korisnik*/
+GO
+Create PROC dbo.Korisnik_Email
+@email nvarchar(50),
+@loz nvarchar(100)
+AS
+SET LOCK_TIMEOUT 3000;
+BEGIN TRY
+	IF EXISTS(SELECT TOP 1 korisnik_email FROM Korisnik
+	WHERE korisnik_email = @email and korisnik_loz=@loz)
+	Begin
+	RETURN 0
+	end
+	RETURN 1
+END TRY
+BEGIN CATCH
+	RETURN @@error;
+END CATCH
+GO
+/**/
+GO
+CREATE PROC Korisnik_Insert
+@email nvarchar(50),
+@loz nvarchar(100)
+AS
+SET LOCK_TIMEOUT 3000;
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 korisnik_email  FROM Korisnik
+	WHERE korisnik_email = @email  )
+	Return 1
+	else
+	Insert Into Korisnik(korisnik_email,korisnik_loz)
+	Values(@email,@loz)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC dbo.Korisnik_Update
+@email nvarchar(50),
+@loz nvarchar(100)
+AS
+SET LOCK_TIMEOUT 3000;
+-- provera da li postoji kategorija
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 korisnik_email FROM dbo.Korisnik
+	WHERE korisnik_email = @email  )
+
+	BEGIN
+	
+	Update Korisnik  Set korisnik_loz=@loz  where korisnik_email=@email 
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create Proc Korisnik_Delete
+@email nvarchar(100)
+as
+Begin TRY
+Delete from Korisnika where korisnik_email=@email
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Svi_Korisnici_Broj
+as
+select count(korisnik_email) from Korisnik
+go
+/**/
+go
+execute Korisnik_Insert'gera.alek@prvabeogim.edu.rs','lozinka'
+go
+/**/
+
+select * from Korisnik
+/*Store Procedure tabela S_Godina*/
+GO
+CREATE PROC S_Godina_Insert
+@s_godina nvarchar(5)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 skolska_godina  FROM S_Godina
+	WHERE skolska_godina = @s_godina  )
+	Return 1
+	else
+	Insert Into S_Godina(skolska_godina)
+	Values(@s_godina)
+		RETURN 0;
+END TRY
+	
+
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create Proc S_Delete
+@s_godina nvarchar(100)
+as
+Begin TRY
+Delete from S_Godina where skolska_godina=@s_godina
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC S_Godina_Update
+@s_godina_id int ,
+@s_godina nvarchar(5)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 skolska_godina FROM S_Godina
+	WHERE sgodina_id = @s_godina_id )
+
+	BEGIN
+	
+	Update S_Godina  Set skolska_godina=@s_godina  where sgodina_id=@s_godina_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+/*Store Procedure tabela Razred*/
+GO
+Create PROC Razred_Insert
+@n_razred nvarchar(5),
+@s_godina_id int,
+@profesor_id int
+AS
+SET LOCK_TIMEOUT 3000;
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 naziv_razreda  FROM Razred
+	WHERE naziv_razreda = @n_razred and sgodina_id=@s_godina_id)
+	Return 1
+	else
+	Insert Into Razred(naziv_razreda,sgodina_id,profesor_id)
+	Values(@n_razred,@s_godina_id,@profesor_id)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Razred_Delete
+@razred nvarchar(5),
+@sgodina_id int
+as
+Begin TRY
+Delete from Razred where naziv_razreda=@razred and sgodina_id=@sgodina_id
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC Razred_Update
+@razred_id int,
+@n_razred nvarchar(5),
+@s_godina_id int,
+@profesor_id int
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 naziv_razreda FROM Razred
+	WHERE razred_id = @razred_id )
+
+	BEGIN
+	
+	Update Razred  Set naziv_razreda=@n_razred,sgodina_id=@s_godina_id,profesor_id=@profesor_id    where razred_id=@razred_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC Razred_Ukupno
+@brojredova int output
+as
+select @brojredova=count(naziv_razreda) from Razred
+
+go
+Declare @broj int
+exec Razred_Ukupno @broj Output;
+print @broj
+go
+/**/
+/*Store Procedure tabela Predmet*/
+GO
+CREATE PROC Predmet_Insert
+@n_predmet nvarchar(100)
+AS
+SET LOCK_TIMEOUT 3000;
+-- provera da li postoji kategorija
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 naziv_predmeta  FROM Predmet
+	WHERE naziv_predmeta = @n_predmet)
+	Return 1
+	else
+	Insert Into predmet(naziv_predmeta)
+	Values(@n_predmet)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Predmet_Delete
+@predmet nvarchar(100)
+as
+Begin TRY
+Delete from Predmet where naziv_predmeta=@predmet
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC Predmet_Update
+@predmet_id int,
+@predmet nvarchar(100)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 naziv_predmeta FROM Predmet
+	WHERE predmet_id = @predmet_id )
+
+	BEGIN
+	
+	Update Predmet  Set naziv_predmeta=@predmet  where predmet_id=@predmet_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC Predmet_Ukupno
+@brojredova int output
+as
+select @brojredova=count(naziv_predmeta) from Predmet
+go
+go
+Declare @broj int
+exec Predmet_Ukupno @broj Output;
+print @broj
+go
+/**/
+/*Store Procedure tabela Profesor*/
+
+GO
+Create PROC Pofesor_Insert
+@ime nvarchar(50),
+@prez nvarchar(50),
+@predmet1_id int
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 Ime_profesora,Prezime_profesora,predmet_1  FROM Profesor
+	WHERE Ime_profesora = @ime and Prezime_profesora=@prez and predmet_1=@predmet1_id)
+	Return 1
+	else
+	Insert Into Profesor(Ime_profesora,Prezime_profesora,predmet_1)
+	Values(@ime,@prez,@predmet1_id)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Profesor_Delete
+@profesor_id int
+as
+Begin TRY
+Delete from Profesor where profesor_id=@profesor_id
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+
+Select * from profesor
+Select * from predmet
+select * from razred
+
+Delete Predmet where predmet_id='8'
+
+Delete Profesor where Ime_profesora=N'Ивана ' and Prezime_profesora=N'Илић' 
+
+execute Profesor_Delete 7
+
+GO
+Create PROC Profesor_Update
+@profesor_id int,
+@ime nvarchar(50),
+@prez nvarchar(50),
+@predmet1_id int,
+@predmet2_id int,
+@predmet3_id int
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 Ime_profesora,Prezime_profesora FROM Profesor
+	WHERE profesor_id = @profesor_id )
+
+	BEGIN
+	
+	Update Profesor  Set Ime_profesora=@ime,Prezime_profesora=@prez, predmet_1=@predmet1_id,predmet_2=@predmet2_id,predmet_3=@predmet3_id   where profesor_id=@profesor_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC Profesor_Ukupno
+@brojredova int output
+as
+select @brojredova=count(Ime_profesora) from Profesor
+go
+go
+Declare @broj int
+exec Profesor_Ukupno @broj Output;
+print @broj
+go
+/**/
+go
+Create proc Profesor_svi
+as
+Select (Ime_profesora + ' ' + Prezime_Profesora) as Naziv,profesor_id,naziv_predmeta from Profesor as p
+inner join Predmet as pr
+on
+p.predmet_1=pr.predmet_id
+go
+/**/
+/*Store Procedure tabela Ucenik*/
+GO
+CREATE PROC Ucenik_Insert
+@ime nvarchar(50),
+@prez nvarchar(50),
+@razred_id int,
+@Ulica nvarchar(200),
+@grad nvarchar(200)
+
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 ime_ucenik,prez_ucenik  FROM Ucenik
+	WHERE ime_ucenik = @ime and prez_ucenik=@prez)
+	Return 1
+	else
+	Insert Into Ucenik(ime_ucenik,prez_ucenik,razred_id,Ulica,Grad)
+	Values(@ime,@prez,@razred_id,@Ulica,@grad)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC Ucenik_Update
+@ucenik_id int,
+@ime nvarchar(50),
+@prez nvarchar(50),
+@razred_id int,
+@Ulica nvarchar(200),
+@grad nvarchar(200)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 ime_ucenik,prez_ucenik FROM Ucenik
+	WHERE ucenik_id = @ucenik_id)
+
+	BEGIN
+	
+	Update Ucenik  Set ime_ucenik=@ime,prez_ucenik=@prez, razred_id=@razred_id,Ulica=@Ulica,Grad=@grad  where ucenik_id=@ucenik_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Ucenik_Delete
+@ucenik_id int
+as
+Begin TRY
+Delete from Ucenik where ucenik_id=@ucenik_id
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC Ucenik_Ukupno
+@brojredova int output
+as
+select @brojredova=count(ime_ucenik) from Ucenik
+go
+go
+Declare @broj int
+select @Broj=count(ime_ucenik) from Ucenik
+print @broj
+go
+go
+Declare @broj int
+exec Ucenik_Ukupno @broj Output;
+print @broj
+go
+/**/
+go
+Create proc Ucenik_svi
+as
+Select (ime_ucenik+ ' '+prez_ucenik) as Naziv,ucenik_id from Ucenik
+go
+/**/
+Create proc Ucenik_Pregled
+as
+Select u.ucenik_id,ime_ucenik,u.prez_ucenik,r.naziv_razreda,s.skolska_godina from Ucenik as u
+inner join Razred as r
+on
+u.razred_id=r.razred_id
+inner join S_Godina as s
+on
+r.sgodina_id=s.sgodina_id
+
+execute Ucenik_Pregled
+
+/*Store Procedure tabela MaturskiRad*/
+GO
+Create PROC MatRad_Insert
+@naziv nvarchar(300),
+@ucenik_id int,
+@profesor_id int,
+@fajl nvarchar(300)
+
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 naziv_rada  FROM MaturskiRad
+	WHERE naziv_rada = @naziv)
+	Return 1
+	else
+	Insert Into MaturskiRad(naziv_rada,ucenik_id,profesor_id,fajl_lokacija)
+	Values(@naziv,@ucenik_id,@profesor_id,@fajl)
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc MatRar_Delete
+@matrad_id int
+as
+Begin TRY
+Delete from MaturskiRad where maturrad_id=@matrad_id
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC MatRad_Update
+@maturrad_id int,
+@naziv nvarchar(300),
+@ucenik_id int,
+@profesor_id int,
+@fajl nvarchar(300)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 naziv_rada  FROM MaturskiRad
+	WHERE maturrad_id = @maturrad_id)
+
+	BEGIN
+	
+	Update MaturskiRad  Set naziv_rada=@naziv,ucenik_id=@ucenik_id, profesor_id=@profesor_id,fajl_lokacija=@fajl where maturrad_id=@maturrad_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC MatRad_Ukupno
+@brojredova int output
+as
+select @brojredova=count(naziv_rada) from MaturskiRad
+go
+go
+Declare @broj int
+exec MatRad_Ukupno @broj Output;
+print @broj
+go
+/**/
+go
+Create Proc Svi_Mat_30
+as
+Select m.maturrad_id,m.naziv_rada,m.fajl_lokacija,ime_ucenik,prez_ucenik from MaturskiRad as m
+inner join Ucenik as u
+on m.ucenik_id=u.ucenik_id
+
+order by m.maturrad_id DESC
+go
+/**/
+execute Svi_Mat_30
+/*Store Procedure tabela Komentar*/
+GO
+Create PROC Komentar_Insert
+@maturrad_id int,
+@komentar nvarchar(240),
+@ocena int,
+@ime_korisnika nvarchar(50)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+IF EXISTS (SELECT TOP 1 Ime_Korisnika  FROM Komentar
+	WHERE Ime_Korisnika = @ime_korisnika)
+	Return 1
+	else
+	Insert Into Komentar(maturrad_id,komentar,Ocena,Ime_Korisnika,dozvolaprikaza)
+	Values(@maturrad_id,@komentar,@ocena,@ime_korisnika,N'Не')
+		RETURN 0;
+END TRY
+	
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create Proc Komentar_Delete
+@komentar_id int
+as
+Begin TRY
+Delete from Komentar where komentar_id=@komentar_id
+RETURN 0
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+GO
+Create PROC Komentar_Update
+@komentar_id int,
+@dozvola nvarchar(2)
+AS
+SET LOCK_TIMEOUT 3000;
+
+BEGIN TRY
+	IF EXISTS (SELECT TOP 1 komentar  FROM Komentar
+	WHERE komentar_id = @komentar_id)
+
+	BEGIN
+	
+	Update Komentar  Set dozvolaprikaza=@dozvola where komentar_id=@komentar_id
+		RETURN 0;
+	END
+	RETURN -1;
+END TRY
+BEGIN CATCH
+	RETURN @@ERROR;
+END CATCH
+GO
+/**/
+go
+Create PROC Komentar_Ukupno
+@brojredova int output
+as
+select @brojredova=count(komentar) from Komentar
+go
+go
+Declare @broj int
+exec Komentar_Ukupno @broj Output;
+print @broj
+go
+/**/
+/*Store Procedure JOIN-Razred*/
+go
+Create Proc Razred_Sgodina
+as
+Select (naziv_razreda +'----' +skolska_godina) as kolone,razred_id From Razred as R 
+Inner Join S_Godina as S
+on
+R.sgodina_id=S.sgodina_id
+order by skolska_godina ASC
+go
+/**/
+go
+create proc Razred_S_Godina_Profesor
+@razred nvarchar(100)
+as
+select s.skolska_godina,r.naziv_razreda,p.Ime_profesora,p.Prezime_profesora from S_godina as s
+inner join razred as r
+on s.sgodina_id=r.sgodina_id
+inner join profesor as p
+on
+p.profesor_id=r.profesor_id
+where r.naziv_razreda=@razred
+go
+/**/
+go
+/*Store Procedure JOIN-Profesor-Predmet*/
+Create Proc Profesor_Predmet
+as
+Select Ime_profesora,Prezime_profesora,naziv_predmeta from Profesor as Pro
+Inner Join Predmet as Pre
+on
+Pro.predmet_1=Pre.predmet_id
+or
+Pro.predmet_2=Pre.predmet_id
+Or
+Pro.predmet_3=Pre.predmet_id
+go
+/*Store Procedure JOIN-Ucenik-Razred*/
+go
+Create proc Ucenik_Razred_SGodina
+as
+select ime_ucenik,prez_ucenik,Ulica,Grad,naziv_razreda,skolska_godina from Ucenik as u
+inner join razred as r
+on u.razred_id=r.sgodina_id
+inner join S_godina as s
+on
+r.sgodina_id=s.sgodina_id
+go
+
+/*Store Procedure JOIN-MaturskiRad-Ucenik-Profesor*/
+go
+Create Proc Maturski_Ucenik_Razred
+as
+Select naziv_rada,ime_ucenik,prez_ucenik,naziv_razreda From MaturskiRad as m
+inner Join Ucenik as u
+on
+m.ucenik_id=u.ucenik_id inner join razred as r
+on
+u.razred_id=r.razred_id
+go
+/**/
+go
+Create Proc Maturski_Profesor_Predmet
+as
+Select naziv_rada,Ime_profesora,Prezime_profesora,naziv_predmeta From MaturskiRad as m
+inner Join Profesor as p
+on
+m.profesor_id=p.profesor_id 
+inner join Predmet as r
+on
+p.predmet_1 =r.predmet_id
+or
+p.predmet_2 =r.predmet_id
+or
+p.predmet_3 =r.predmet_id
+go
+
+go
+/*Store Procedure JOIN-Komentar-MaturskiRad*/
+Create proc Komentar_Matrad
+as
+Select komentar_id,naziv_rada,fajl_lokacija,komentar,Ocena,dozvolaprikaza from MaturskiRad as m
+inner join
+Komentar as k
+on
+m.maturrad_id=k.maturrad_id
+order by naziv_rada ASC
+go
+/**/
+Create proc Komentar_id_Matrad
+@matur_id int
+as
+Select komentar_id,naziv_rada,fajl_lokacija,komentar,Ocena,dozvolaprikaza from MaturskiRad as m
+inner join
+Komentar as k
+on
+m.maturrad_id=k.maturrad_id
+where k.maturrad_id=@matur_id
+and
+dozvolaprikaza=N'Да'
+go
+/**/
+
+select * from MaturskiRad
+
+Delete from MaturskiRad
+
+exec Komentar_id_Matrad '4'
+
+select * from komentar
+
+execute Komentar_Matrad
+
+go
+Create proc Pregled_MatRad 
+@maturrad int
+as
+Select m.naziv_rada,u.ime_ucenik,u.prez_ucenik,p.Ime_profesora,p.Prezime_profesora,r.naziv_razreda,s.skolska_godina from MaturskiRad as m
+inner join Ucenik as u
+on
+m.ucenik_id=u.ucenik_id
+inner join Razred as r
+on
+u.razred_id=r.razred_id
+inner join S_Godina as s
+on
+r.sgodina_id=s.sgodina_id
+inner join Profesor p
+on 
+m.profesor_id=p.profesor_id
+where m.maturrad_id=@maturrad
+go
+/**/
+go
+Create PROC Zbir_Ocena
+@maturrad int
+as
+Select COALESCE(SUM(Ocena),0) AS zbir  from Komentar
+where maturrad_id=@maturrad 
+go
+
+go
+Create PROC Ukupno_Ocena
+@maturrad int
+as
+select Count(Ocena) As ocena from Komentar
+where maturrad_id=@maturrad
+go
+
+go
+exec Zbir_Ocena '4'
+exec Ukupno_Ocena '4'
+
+
+select * from Komentar
+
+Delete Komentar where komentar_id='1'
